@@ -1181,7 +1181,64 @@ class Uniswap:
         ).transact({"from": _addr_to_str(self.address)})
         receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
         return receipt
+    @supports([3])
+    def get_position(
+        self,
+        tokenId: int,  
+     ) -> Dict:
+        position = self.nonFungiblePositionManager.functions.positions(tokenId).call()
+        # positionDict = {
+        #     "nonce": position,
+        #     "operator": ,
+        #     "poolId": ,
+        #     "tickLower":,
+        #     "tickUpper";,
+        #     "liquidity":,
+        #     "feeGrowthInside0LastX128":,
+        #     "feeGrowthInside1LastX128":,
+        #     "tokensOwed0":,
+        #     "tokensOwed1":, 
+        # }
 
+        return position
+     # Computes the amount of liquidity received for a given amount of token0 and price range
+    @supports([3])
+    def get_Liquidity_by_token0(
+        self,
+        amount0: float, 
+        sqrtPriceLow: float,
+        sqrtPriceHigh: float,
+    ) -> float:
+        return amount0 * sqrtPriceLow * sqrtPriceHigh / (sqrtPriceHigh - sqrtPriceLow)
+
+    # Computes the amount of liquidity received for a given amount of token1 and price range
+    @supports([3])
+    def get_Liquidity_by_token1(
+        self,
+        amount1: float, 
+        sqrtPriceLow: float,
+        sqrtPriceHigh: float,
+    ) -> float:
+        return amount1 / (sqrtPriceHigh - sqrtPriceLow)  
+    #Computes the maximum amount of liquidity received for a given amount of token0, token1, the current  pool prices and the prices at the tick boundaries
+    @supports([3])
+    def get_liquidity(
+        self,
+        amount0: float,  
+        amount1: float, 
+        sqrtPrice: float,  
+        sqrtPriceLow: float,  
+        sqrtPriceHigh: float, 
+    ) -> float:
+        if sqrtPrice <= sqrtPriceLow:
+            liquidity = self.get_Liquidity_by_token0(amount0, sqrtPriceLow, sqrtPriceHigh)
+        elif sqrtPrice < sqrtPriceHigh:
+            liquidity0 = self.get_Liquidity_by_token0(amount0, sqrtPrice, sqrtPriceHigh)
+            liquidity1 = self.get_Liquidity_by_token1(amount1, sqrtPriceLow, sqrtPrice)
+            liquidity = min(liquidity0, liquidity1)
+        else:
+            liquidity = self.get_Liquidity_by_token1(amount1, sqrtPriceLow, sqrtPriceHigh)
+        return liquidity
     # TODO: should this be multiple functions?
     @supports([3])
     def close_position(
